@@ -1,6 +1,4 @@
 Known issues 
 -------------
 
-Can only handle 1 million inputs
-
 Output files have 1 less number than given input

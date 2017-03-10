@@ -17,6 +17,8 @@ dep = $(obj:.o=.d) # one dependency file for each source
 
 CFLAGS = -g -lm
 
+all : main
+
 main: $(obj)
 	$(CC) -o $@ $^ $(CFLAGS)
 
