@@ -290,7 +290,7 @@ int call_heapsort (int total_chunks, int max_floats_read)
     
     
     /* Delete Temporary Files */
-    /*
+    
     for(i=0;i<total_chunks;++i)
     {
         sprintf(filename_chunk,"temp%d",i);
@@ -302,7 +302,7 @@ int call_heapsort (int total_chunks, int max_floats_read)
         }
     }
     printf("\n All temp file deleted successfully.\n");
-    */
+    
    
     if (filename_chunk!=NULL)
     {
