@@ -13,11 +13,14 @@ void genFloat(char* inputfile, int MAX_FLOATS)
     srand((unsigned int)time(NULL));
     
     float a = 5;
+    char delimiter[] = ",";
 
     for (int i = 0; i < MAX_FLOATS; ++i)
     {    
         float r = (1+(float)rand()/(float)RAND_MAX) * a; 
-        fprintf(fp_write, "%f\n", r);
+        fprintf(fp_write, "%f", r);
+        if (i < (MAX_FLOATS-1) )
+            fprintf(fp_write, "%s", delimiter);
     }
 
     if(fp_write != NULL)

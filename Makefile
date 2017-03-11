@@ -2,14 +2,6 @@
 #  target: dependencies
 #  	action
 
-UNAME := $(shell uname)
-
-ifeq ($(UNAME), Linux)
-	DELETE = rm -f
-else
-	DELETE = del
-endif
-
 CC = gcc
 src = $(wildcard *.c)
 obj = $(src:.c=.o)
@@ -33,4 +25,4 @@ main: $(obj)
 
 clean:
 	clear
-	$(DELETE) *.o *.txt *.d temp* main *.*swp
+	rm -f *.o *.txt *.d ~tmp* main 
