@@ -276,8 +276,10 @@ int call_heapsort (int total_chunks, int max_floats_read)
             perror("Error");
         }
     }
+
     printf("\n All temporary merge file deleted successfully.\n");
-        
+       
+
    
     if (filename_chunk!=NULL)
     {
