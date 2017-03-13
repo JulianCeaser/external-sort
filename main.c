@@ -4,17 +4,12 @@
 #include <time.h>
 #include <math.h>
 
-#include "mean.h"
 #include "genFloat.h"
-#include "getfloat.h"
 #include "heapsort.h"
 
-//#define MEAN
-//#define HEAP_DEBUG
-//#define TIMER
-
 #define MAX_FLOATS_READ_IN_HEAP 250000
-#define MAX_ALLOWED_SIZE  10000000
+#define MAX_ALLOWED_SIZE 10000000
+#define TOP_SCORE 10
 
 float mean = 0.0;
 float standard_deviation = 0.0;
@@ -78,7 +73,14 @@ void mergesort(float * lst, int a, int b)
 
 
 
-
+/* Creates a heap which takes one input from each sorted chunk and runs 
+ * MAX_HEAPSORT on that heap. In a sorted Max Heap the largest number is always
+ * on the end of the heap and that is written to the output.
+ * The next number from the chunk is then read and a new heap is again generated
+ * until all the numbers are written in sorted order 
+ *
+ * In addition we variance and standard deviation of the entire set of inputs and
+ * call the zscore_calculator function*/
 
 
 void create_sorted_heap_output (heapNode *A, int total_chunks, int max_floats)
@@ -90,118 +92,76 @@ void create_sorted_heap_output (heapNode *A, int total_chunks, int max_floats)
     FILE *zscore_out= NULL;
 
     fp_out = openFile("merged_output.txt","w");
-    zscore_out = openFile("variance_output.txt","w");
+    zscore_out = openFile("variance_output.txt","wb");
     
-    #ifdef HEAP_DEBUG
-        printf("\ntotal_chunks = %d, max_floats = %d\n",total_chunks,max_floats);
-    #endif
-
     heap_max = (float *)malloc(sizeof(float)*total_chunks);
 
     for (int i=0;i<total_chunks;++i)
-    {
         *(heap_max+i) = *((A+i)->root_element);
-    }
 
     int j = total_chunks-1;         
     
     for (int i=0;i<max_floats;i++)
     {
+        max_heapsort(heap_max, j+1);
 
-        // Build max-heap returns the highest element   
-        
-        #ifdef HEAP_DEBUG
-            printf("\n Before Heapsort, Context : i = %d, total_chunks = %d\n",i,total_chunks);
-            DISPLAY_HEAP(heap_max,j+1);
-        #endif // HEAP_DEBUG
-
-        MAX_HEAPSORT(heap_max, j+1);
-        
-        #ifdef HEAP_DEBUG
-            printf ("\n After Max Heapsort Display_Heap\n");
-            DISPLAY_HEAP(heap_max,j+1);
-        #endif // HEAP_DEBUG
-
-        // We start writing the highest value in the output file ( this will contain merge result of all sorted chunks )    
-
-        #ifdef HEAP_DEBUG
-            printf("\n After Max_Heapsort of Node_list, total chunks = %d, Element written %f\n",j+1,*(heap_max+j));
-        #endif // HEAP_DEBUG
-
-        //Variance is calculated and sum of all variance is stored in zscore 
         variance = *(heap_max+j) - mean ;
         sum_of_variance = sum_of_variance + (variance*variance);
         
-        #ifdef HEAP_DEBUG
-            printf("\nNumber being written = %f, mean = %f, variance = %f, sum_of_variance_squared = %f\n",*(heap_max+j),mean,variance,sum_of_variance);
-        #endif // HEAP_DEBUG
-
-
-        //Writing the Max element and its variance to merged_output.txt and zscore_output.txt respectively
         fprintf(fp_out,"%f\n",*(heap_max+j));
-        fprintf(zscore_out,"%f\n",variance);
+        fprintf(zscore_out,"%f,",variance);
 
         
-        //Reading the next floating point number to replace the max number
+        /* Reading the next floating point number to replace the max number written */
         
         for (int k = 0; k < total_chunks ; k++)
         { 
-            #ifdef HEAP_DEBUG
-                printf("\n*(heap_max+%d) = %f, *((A+%d)->root_element) = %f\n",j,*(heap_max+j),k, *((A+k)->root_element));
-            #endif // HEAP_DEBUG
-        
-            if (((A+k)->root_element) !=NULL)
+            if ( ((A+k)->root_element) != NULL )
             {
-                if(heap_max[j] == *((A+k)->root_element))
+                if( (heap_max[j] == *((A+k)->root_element)) )
                 {
-                    fscanf((A+k)->root_index,"%f\n",(A+k)->root_element);
-                    //getfloat((A+k)->root_index, (A+k)->root_element) ;
-                
                     if( ( !feof( (A+k)->root_index) ) )
-                         heap_max[j] = *((A+k)->root_element);
+                    {
+                        fscanf((A+k)->root_index,"%f,",(A+k)->root_element);
+                        heap_max[j] = *((A+k)->root_element);
+                    }
                     else
                     {
-                        #ifdef HEAP_DEBUG
-                            printf("\nClosing file pointer and reducing total chunks");
-                        #endif // HEAP_DEBUG
+                        j--;
+                        
+                        if ( ((A+k)->root_index) != NULL )
+                        {
+                            fclose( (A+k)->root_index );
+                            (A+k)->root_index = NULL;
+                        }
 
-                        *(heap_max+j) = -1.0;
-                        if (((A+k)->root_index) !=NULL)
-                            fclose( (A+k)->root_index );          // Closing each open temporary file
-
-                        if (((A+k)->root_element) !=NULL)
+                        if ( ((A+k)->root_element) != NULL )
                         {
                             free((A+k)->root_element);
-                            (A+k)->root_element =NULL;
-
+                            (A+k)->root_element = NULL;
                         }
-                        j--;
                     }
                  break;
                     
                 }
             }
         } 
-        #ifdef HEAP_DEBUG
-            printf("\n Getfloat() is called and now the Heap looks like this before MAX_HEAPSORT is called again.\n");
-            DISPLAY_HEAP(heap_max,total_chunks);
-            printf("\n After getfloat(), value of float = %f, root_index = %p\n",*(heap_max+j),(A+j)->root_index);
-        #endif // HEAP_DEBUG
-
     }
-    
-    //Standard Deviation is calculated
+
+    /* Calculating standard deviation*/
+
     standard_deviation = sqrt(sum_of_variance);
     
-    #ifdef MEAN
-        printf("\nSum of variance = %f, Standard Deviation = %lf",sum_of_variance,standard_deviation); 
-    #endif // MEAN
+    
+    /* Setting pointers to NULL after freeing them */
+
     if (heap_max !=NULL) 
     { 
         free (heap_max);
         heap_max = NULL;
 
     }
+    
     if (zscore_out != NULL)
     {
         fclose(zscore_out);
@@ -214,24 +174,34 @@ void create_sorted_heap_output (heapNode *A, int total_chunks, int max_floats)
         fp_out=NULL; 
     }
 }
- 
+
+
+/* Calculates the zscore using the formula
+ * zscore = variance / standard_deviation 
+ * and write the output to file*/
+
 void zscore_calculator (int total_zscores)
 {
     FILE *zscore_input = NULL, *zscore_output = NULL;
     int i;
 
-    zscore_input = openFile("variance_output.txt","r");
+    zscore_input = openFile("variance_output.txt","rb");
     zscore_output = openFile("zscore_output.txt","w");
 
     zscoreList = (float *)malloc(sizeof(float));
     
+    printf("\n ************************************************** \n");
+    printf("\n The Top %d Z-Score are \n",TOP_SCORE);
     for(i=0;i<total_zscores;++i)
     {
-        //getfloat(zscore_input,zscoreList);
-        fscanf(zscore_input,"%f\n",zscoreList);
+        fscanf(zscore_input,"%f,",zscoreList);
         *zscoreList = *zscoreList / standard_deviation ;
         fprintf(zscore_output,"%f\n",*zscoreList);
+        if(i<TOP_SCORE)
+            printf("\n %f ",*zscoreList );
     }
+    printf("\n\n The rest of the zscores can be found in zscore_output.txt\n");
+    printf("\n ************************************************** \n");
 
     if (zscore_input !=NULL)
         fclose(zscore_input);
@@ -240,39 +210,43 @@ void zscore_calculator (int total_zscores)
         fclose(zscore_output);
 } 
 
-int callHeapSort (int total_chunks, int max_floats_read)
+
+
+
+/* Creates a structure called Node_list. The elements of Node_list are root_index
+ * and root_element
+ *
+ * root_index will contain a File pointer to a sorted chunk, while 
+ * root_element will point to the floating point number in that chunk
+ *
+ * Node_list is then sent to create_sorted_heap_output function
+ *  */
+
+
+int call_heapsort (int total_chunks, int max_floats_read)
 {
-    #ifdef DEBUG_ENABLED
-        printf("\ncallHeapSort: Received Params: total_chunks =%d max_floats_read=%d\n", total_chunks, max_floats_read);
-    #endif // DEBUG_ENABLED
-    
     char *filename_chunk = NULL;
-    FILE *fp_list=NULL;                      //List of file pointer
+    FILE *fp_list=NULL;
     int i, status;
 
 
-    // create a dynamic array containing list of heapNode
-    // size of dynamic array is set to total number of external chunks 
     Node_list = (heapNode*)malloc(sizeof(heapNode)*total_chunks);
+    Node_list->root_element = NULL;
+    Node_list->root_index = NULL;
 
-
-    
     filename_chunk = (char *)malloc(sizeof(char*));
 
     for(i=0;i<total_chunks;++i)
-    {   
+    {       
         Node_list->root_index = (FILE *)malloc(sizeof(FILE));
         Node_list->root_element = (float *)malloc(sizeof(float));
+        
+        sprintf(filename_chunk,"~tmp%d",i);
+        fp_list = openFile(filename_chunk,"rb");
     
-        sprintf(filename_chunk,"temp%d",i);
-        fp_list = openFile(filename_chunk,"r");
-    
-        //Storing file pointer index in the Nodelist
         Node_list->root_index = fp_list;
 
-
-        //Getfloat takes the filepointer fp and stores the root element into Nodelist->root_element
-        fscanf(fp_list,"%f\n",Node_list->root_element);
+        fscanf(fp_list,"%f,",Node_list->root_element);
         if ((Node_list->root_element) == NULL)
         {
             perror("Root element is null");
@@ -282,20 +256,7 @@ int callHeapSort (int total_chunks, int max_floats_read)
         Node_list++;
     }
 
-    // Very Important 
-    //Now reset the Node_list pointer to the begining of the Node_list
     Node_list = Node_list - total_chunks;
-
-    //First pass of 1 element per chunk sent to Heapify
-
-    #ifdef DEBUG_ENABLED
-        printf("\nNode_list pointer = %p,root_index = %p, total_chunks = %d\n",
-                                  Node_list,    Node_list->root_index,  total_chunks);
-
-        printf("\nNode_list pointer at index 0 = %p\n",(Node_list));
-        printf("\nNode_list pointer at index 1 = %p\n",(Node_list+1));
-    #endif // DEBUG_ENABLED
-
 
     create_sorted_heap_output (Node_list, total_chunks, max_floats_read);
 
@@ -304,10 +265,10 @@ int callHeapSort (int total_chunks, int max_floats_read)
     
     
     /* Delete Temporary Files */
-    /*
+    
     for(i=0;i<total_chunks;++i)
     {
-        sprintf(filename_chunk,"temp%d",i);
+        sprintf(filename_chunk,"~tmp%d",i);
         status = remove(filename_chunk);
         if(status != 0)
         {
@@ -315,8 +276,10 @@ int callHeapSort (int total_chunks, int max_floats_read)
             perror("Error");
         }
     }
-    printf("\n All temp file deleted successfully.\n");
-    */
+
+    printf("\n All temporary merge file deleted successfully.\n");
+       
+
    
     if (filename_chunk!=NULL)
     {
@@ -324,28 +287,30 @@ int callHeapSort (int total_chunks, int max_floats_read)
         filename_chunk=NULL;
     }
 
-    //for(i=0;i<total_chunks;i++)
-    //{
     if(Node_list->root_element != NULL)
+    {
         free(Node_list->root_element);
-        //Node_list++; 
-    //}
-    
-    //Node_list = Node_list - total_chunks;
+        Node_list->root_element = NULL;
+    }
 
-    //if(Node_list != NULL )
-        //free(Node_list);
+    if(Node_list->root_index != NULL)
+    {
+        fclose(Node_list->root_index);
+        Node_list->root_index = NULL;
+    }
     
     return 1;
 
-
 }
+
+
+/* Banner function to explain usage of the external-sort program */
 
 void printBanner()
 {
-    printf("Usage Sequence 1: main g Total Numbers to be generated \n");
-    printf("e.g Usage Sequence 1: main g 100 or main g 1000000 \n");
-    printf("Usage Sequence 2.: main s\n");
+    printf("\n Usage Sequence 1: main g <total numbers to be generated> \n");
+    printf(" e.g Usage Sequence 1: main g 100 or main g 1000000 \n");
+    printf(" Usage Sequence 2.: main s\n");
 
     printf("g [ this option generates Floating point Numbers in file input.txt ]\n");
     printf("s [ this option sorts in descending order Floating point Numbers in small chunks using Merge Sort\n");
@@ -354,15 +319,23 @@ void printBanner()
 }
 
 
+
+
+
+
+/* Main function which reads the inputs and creates sorted chunks and handles the case where number
+ * of input is smaller than buffer size */
+
 int main(int argc, char **argv)
 {
-    FILE *fp=NULL,*fp1=NULL;                                          // fp -> read file pointer, fp1 -> write chunks file pointer
-    int num_of_floats_read,actual_nums_read,run_size,i,j;
-    char temp_output[15];                                   // Chunk name character array
-    char *output_file;                                      // Final output name character array;
-    char *input_file = "input.txt";                         // Name of input file
-    clock_t t,t1;                                           // Timer variable
-    double cpu_time_used;                                   // Actual time taken 
+    FILE *fp_read=NULL,*fp_write=NULL;                                          
+    int num_of_floats_read,actual_nums_read,run_size,more_input,status;
+    int i,j;
+    char temp_output[15];                                   
+    char *output_file;                                      
+    char *input_file = "input.txt";                         
+    clock_t t,t1;                                           
+    double cpu_time_used;                                    
     
     
     if (argc > 3) 
@@ -377,7 +350,7 @@ int main(int argc, char **argv)
             exit(1);
         }else if (atoi(argv[2]) > MAX_ALLOWED_SIZE )
         {
-            printf("\n Input Error : Size out of range. Max supported range is 1 Million ");
+            printf("\n Input Error : Size out of range. Max supported range is 10 Million ");
             exit(1);
         } else 
         { 
@@ -388,8 +361,8 @@ int main(int argc, char **argv)
     }
     else if ((argc == 2 ) && (( !strcmp(argv[1], "s") )))
     {
-        fp = openFile(input_file,"r");
-        if ( fp == NULL)
+        fp_read = openFile(input_file,"r");
+        if ( fp_read == NULL)
         {
             printf("\nUnable to open input file");
             printf("\nTry running with option -g first before selecting option s");
@@ -410,32 +383,34 @@ int main(int argc, char **argv)
             t1 = t;
 
             printf("\n Mergesort started. Creating and writing to disk temporary chunks\n");
-            int more_input = 1;
+            
+            more_input = 1;
 
             while( more_input)
             {
-                for (num_of_floats_read=0;num_of_floats_read<MAX_FLOATS_READ_IN_HEAP;++num_of_floats_read)
+                for (num_of_floats_read=0;num_of_floats_read<MAX_FLOATS_READ_IN_HEAP;num_of_floats_read++)
                 {
-                    if( fscanf(fp,"%f\n",floatList+num_of_floats_read) == 0 )
+                    if( fscanf(fp_read,"%f,",floatList+num_of_floats_read) == 0 )
                     {
                         printf("\n Invalid input received. Please use proper input and try again. \n");
                         exit(1);
                     }
                     mean += *(floatList+num_of_floats_read);
-                    if( feof(fp) )
+                    if( feof(fp_read) )
                     {
                         more_input = 0;
+                        num_of_floats_read++;
                         break;
                     }
                 }
 
                 mergesort(floatList,0,num_of_floats_read);
                 
-                sprintf(temp_output,"temp%d",run_size);
-                fp1 = openFile(temp_output,"w");
+                sprintf(temp_output,"~tmp%d",run_size);
+                fp_write = openFile(temp_output,"wb");
 
                 for (int j=0; j<num_of_floats_read; j++)
-                    fprintf(fp1,"%f\n",*(floatList+j));
+                    fprintf(fp_write,"%f,",*(floatList+j));
 
                 #ifdef TIMER
                     t1 = clock() - t1; 
@@ -443,13 +418,12 @@ int main(int argc, char **argv)
                     printf("\n Mergesort for chunk %d complete. Time taken is %lf \n",run_size,cpu_time_used);
                 #endif // TIMER 
 
-                //printf("\nnum_of_floats_read = %d, actual_nums_read = %d",num)
                 actual_nums_read += num_of_floats_read;
                 run_size++;
-                fclose(fp1);
+                fclose(fp_write);
             }
 
-            fclose(fp);
+            fclose(fp_read);
 
             t = clock() - t;    // Final Time
             cpu_time_used = ((double)t)/CLOCKS_PER_SEC; // Time in seconds
@@ -457,14 +431,7 @@ int main(int argc, char **argv)
             printf("\n Merge Sort completed. Total %d chunks generated.\n",run_size);
             printf("\n Total Time Taken to generate sorted chunks using Merge Sort is %lf secs\n",cpu_time_used);
 
-            //actual_nums_read +=num_of_floats_read;
-            //fclose(fp);
-
             mean = mean/actual_nums_read;
-
-            #ifdef MEAN
-                printf("\n Mean of all input numbers = %f\n",mean);
-            #endif // MEAN
 
             printf ("\n Calling HeapSort to Merge sorted chunks \n");
             
@@ -474,48 +441,60 @@ int main(int argc, char **argv)
                 printf("run_size = %d actual_nums_read=%d", run_size, actual_nums_read);
             #endif // DEBUG_ENABLED
             
+            
             if(run_size>1)
-                callHeapSort (run_size, actual_nums_read);
+                call_heapsort (run_size, actual_nums_read);
             else
             {
                 float variance=0.0, sum_of_variance=0.0;
 
-                FILE *fp_out, *zscore_out;
-                fp_out = openFile("merged_output.txt","w");
-                zscore_out = openFile("variance_output.txt","w");
+                FILE *zscore_out = NULL;
+                fp_write = openFile("merged_output.txt","w");
+                zscore_out = openFile("variance_output.txt","wb");
 
-                sprintf(temp_output,"temp%d",run_size-1);
-                fp = openFile(temp_output,"r");
+                sprintf(temp_output,"~tmp%d",run_size-1);
+                fp_read = openFile(temp_output,"r");
 
                 for(i=0;i<actual_nums_read;++i)
                 {
                     variance = *(floatList+i) - mean;
                     sum_of_variance = sum_of_variance + (variance*variance);
         
-                    fprintf(fp_out,"%f\n",*(floatList+i));
-                    fprintf(zscore_out,"%f\n",variance);
+                    fprintf(fp_write,"%f\n",*(floatList+i));
+                    fprintf(zscore_out,"%f,",variance);
                 }
 
                 standard_deviation = sqrt(sum_of_variance);
-                fclose(fp_out);
-                fclose(zscore_out);
+
+                if (fp_write != NULL) 
+                {
+                    fclose(fp_write);
+                    fp_write = NULL;
+                }
+                if (zscore_out != NULL)
+                {
+                    fclose(zscore_out);
+                    zscore_out = NULL;
+                }
                 
                 printf ("\n Sorted Chunks are merged using Heap Sort and writen to output file = merged_output.txt\n");
                 printf ("\n Variance of sorted Chunks are writen to output file = zscore_output.txt\n");
     
-                if(Node_list != NULL )
-                    free(Node_list);
-
-
-                int status = remove(temp_output);
+                status = remove(temp_output);
+                
                 if(status == 0)
-                    printf("\n %s file deleted successfully.\n",temp_output);
+                    printf("\n All temporary merge file deleted successfully.\n");
                 else
                 {
                     printf("Unable to delete %s",temp_output);
                     perror("Error");
                 }
-                fclose(fp);
+                
+                if (fp_read != NULL )
+                {
+                    fclose(fp_read);
+                    fp_read;
+                }
 
             }
                     

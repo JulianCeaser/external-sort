@@ -13,28 +13,20 @@ typedef struct heapNode{
 
 FILE* openFile(char* fileName, char* mode);
 
-int PARENT (int i);
+int parent (int i);
 
-int LEFT ( int i);
+int left ( int i);
 
-int RIGHT ( int i);
+int right ( int i);
 
 void swap ( float *px, float *py );
 
-void DISPLAY_HEAP(float *A, int len);
+void display_heap(float *A, int len);
 
-void MIN_HEAPIFY (heapNode *A, int index, int len);
+void max_heapify (float *A, int index, int len);
 
-void MAX_HEAPIFY (float *A, int index, int len);
+void build_max_heap(float *A, int len);
 
-void BUILD_MIN_HEAP(heapNode *A, int len);
+void max_heapsort (float *A, int len);
 
-void BUILD_MAX_HEAP(float *A, int len);
-
-void MIN_HEAPSORT (heapNode *A, int len);
-
-void MAX_HEAPSORT (float *A, int len);
-
-void create_sorted_heap_output (heapNode *A, int total_chunks, int max_floats);
-        
 #endif
