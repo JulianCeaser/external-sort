@@ -7,7 +7,7 @@ src = $(wildcard *.c)
 obj = $(src:.c=.o)
 dep = $(obj:.o=.d) # one dependency file for each source
 
-CFLAGS = -g -lm
+CFLAGS = -lm
 
 all : main
 
@@ -25,4 +25,6 @@ main: $(obj)
 
 clean:
 	clear
-	rm -f *.o *.txt *.d ~tmp* main 
+	rm -f *.o *.d ~tmp* 
+	rm -f main 
+	rm -f input.txt variance_output.txt merged_output.txt zscore_output.txt

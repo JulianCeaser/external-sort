@@ -5,15 +5,13 @@
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
 CC	Makefile	/^CC = gcc$/;"	m
-CFLAGS	Makefile	/^CFLAGS = -g -lm$/;"	m
-DELETE	Makefile	/^	DELETE = del$/;"	m
-DELETE	Makefile	/^	DELETE = rm -f$/;"	m
+CFLAGS	Makefile	/^CFLAGS = -lm$/;"	m
 GENFLOAT_H_INCLUDED	genFloat.h	2;"	d
 HEAPSORT_H_INCLUDED	heapsort.h	2;"	d
-MAX_ALLOWED_SIZE	main.c	15;"	d	file:
-MAX_FLOATS_READ_IN_HEAP	main.c	14;"	d	file:
+MAX_ALLOWED_SIZE	main.c	11;"	d	file:
+MAX_FLOATS_READ_IN_HEAP	main.c	10;"	d	file:
 Node_list	main.c	/^heapNode *Node_list = NULL;$/;"	v
-UNAME	Makefile	/^UNAME := $(shell uname)$/;"	m
+TOP_SCORE	main.c	12;"	d	file:
 build_max_heap	heapsort.c	/^void build_max_heap(float *A, int len)$/;"	f
 call_heapsort	main.c	/^int call_heapsort (int total_chunks, int max_floats_read)$/;"	f
 create_sorted_heap_output	main.c	/^void create_sorted_heap_output (heapNode *A, int total_chunks, int max_floats)$/;"	f

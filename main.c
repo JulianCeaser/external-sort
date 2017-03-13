@@ -8,7 +8,7 @@
 #include "heapsort.h"
 
 #define MAX_FLOATS_READ_IN_HEAP 250000
-#define MAX_ALLOWED_SIZE 10000000
+#define MAX_ALLOWED_SIZE 100000000
 #define TOP_SCORE 10
 
 float mean = 0.0;
@@ -110,7 +110,6 @@ void create_sorted_heap_output (heapNode *A, int total_chunks, int max_floats)
         
         fprintf(fp_out,"%f\n",*(heap_max+j));
         fprintf(zscore_out,"%f,",variance);
-
         
         /* Reading the next floating point number to replace the max number written */
         
@@ -147,6 +146,7 @@ void create_sorted_heap_output (heapNode *A, int total_chunks, int max_floats)
             }
         } 
     }
+    printf("\n");
 
     /* Calculating standard deviation*/
 
@@ -348,7 +348,7 @@ int main(int argc, char **argv)
             exit(1);
         }else if (atoi(argv[2]) > MAX_ALLOWED_SIZE )
         {
-            printf("\n Input Error : Size out of range. Max supported range is 10 Million ");
+            printf("\n Input Error : Size out of range. Max supported range is 100 Million ");
             exit(1);
         } else 
         { 
@@ -384,7 +384,7 @@ int main(int argc, char **argv)
             
             more_input = 1;
 
-            while( more_input)
+            while(more_input)
             {
                 for (num_of_floats_read=0;num_of_floats_read<MAX_FLOATS_READ_IN_HEAP;num_of_floats_read++)
                 {
@@ -407,21 +407,24 @@ int main(int argc, char **argv)
                 sprintf(temp_output,"~tmp%d",run_size);
                 fp_write = openFile(temp_output,"wb");
 
+                actual_nums_read += num_of_floats_read;
                 for (int j=0; j<num_of_floats_read; j++)
+                {
                     fprintf(fp_write,"%f,",*(floatList+j));
+                }
 
                 #ifdef TIMER
                     t1 = clock() - t1; 
                     cpu_time_used = ((double)t1)/CLOCKS_PER_SEC; // Time in seconds
                     printf("\n Mergesort for chunk %d complete. Time taken is %lf \n",run_size,cpu_time_used);
                 #endif // TIMER 
-
-                actual_nums_read += num_of_floats_read;
-                run_size++;
+                
+                run_size++;                
                 fclose(fp_write);
             }
 
             fclose(fp_read);
+            printf("\n");
 
             t = clock() - t;    // Final Time
             cpu_time_used = ((double)t)/CLOCKS_PER_SEC; // Time in seconds
@@ -434,11 +437,6 @@ int main(int argc, char **argv)
             printf ("\n Calling HeapSort to Merge sorted chunks \n");
             
             t = clock(); // Initial Time
-            
-            #ifdef DEBUG_ENABLED
-                printf("run_size = %d actual_nums_read=%d", run_size, actual_nums_read);
-            #endif // DEBUG_ENABLED
-            
             
             if(run_size>1)
                 call_heapsort (run_size, actual_nums_read);
@@ -461,6 +459,7 @@ int main(int argc, char **argv)
                     fprintf(fp_write,"%f\n",*(floatList+i));
                     fprintf(zscore_out,"%f,",variance);
                 }
+                printf("\n");
 
                 standard_deviation = sqrt(sum_of_variance);
 
