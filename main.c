@@ -149,7 +149,7 @@ void create_sorted_heap_output (heapNode *A, int total_chunks, int max_floats)
     printf("\n");
 
     /* Calculating standard deviation*/
-
+    sum_of_variance /= max_floats;
     standard_deviation = sqrt(sum_of_variance);
     
     
@@ -463,6 +463,7 @@ int main(int argc, char **argv)
                 }
                 printf("\n");
 
+                sum_of_variance /= actual_nums_read;
                 standard_deviation = sqrt(sum_of_variance);
 
                 if (fp_write != NULL) 
